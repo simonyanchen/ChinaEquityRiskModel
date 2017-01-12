@@ -9,6 +9,7 @@ Universe.Historical <-
       stop("universe as of reference date doesn't exist", call. = FALSE)
     ret <- read.csv(filepath)
     ret <- ret[, -1, drop = FALSE]
+    ret$Ticker <- as.character(ret$Ticker)
     return(ret)
   }
 
@@ -27,7 +28,7 @@ Universe.New <-
       #SHASHR$Exchange <- "SH"
       ret <- rbind(SZASHR,SHASHR)
       names(ret)[1] <- "Ticker"
-      ret$Ticker <- paste(ret$Ticker,"Equity")
+      ret$Ticker <- as.character(paste(ret$Ticker,"Equity"))
       write.csv(ret,file = filepath)
     }
     return(ret)

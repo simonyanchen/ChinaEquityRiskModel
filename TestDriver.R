@@ -1,0 +1,5 @@
+source("Initialize.R")
+source("Universe.R")
+source("BBGData.R")
+Universe <- Universe.Historical(as.Date("2017-01-10"))
+BBGData.Load("PX_LAST","2016")
