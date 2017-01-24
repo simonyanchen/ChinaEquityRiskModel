@@ -53,6 +53,50 @@ BBGData.Read.BP_RATIO <-
     return(BP_RATIO)
   }
 
+BBGData.Read.EP_RATIO <-
+  function(Ref.Year)
+  {
+    #Earnings to Price Ratio
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
+    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
+    EARNING <- bdh(Universe$Ticker, "TRAIL_12M_EPS_BEF_XO_ITEM", start.date = S.Date, end.date = E.Date, options = Options)
+    EARNING <- lapply(EARNING, (function(x) x$TRAIL_12M_EPS_BEF_XO_ITEM[x$date %in% DATE]))[Universe$Ticker]
+    
+    EP_RATIO <- as.data.frame(EARNING)/as.data.frame(PRICE)
+    names(EP_RATIO) <- Universe$Ticker
+    EP_RATIO <- cbind.data.frame(DATE, EP_RATIO)
+    
+    return(EP_RATIO)
+  }
+
+BBGData.Read.CFP_RATIO <-
+  function(Ref.Year)
+  {
+    #Cash Flow to Price Ratio
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
+    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
+    CF <- bdh(Universe$Ticker, "TRAIL_12M_CASH_FROM_OPER", start.date = S.Date, end.date = E.Date, options = Options)
+    CF <- lapply(CF, (function(x) x$TRAIL_12M_CASH_FROM_OPER[x$date %in% DATE]))[Universe$Ticker]
+    
+    CFP_RATIO <- as.data.frame(CF)/as.data.frame(PRICE)
+    names(CFP_RATIO) <- Universe$Ticker
+    CFP_RATIO <- cbind.data.frame(DATE, CFP_RATIO)
+    
+    return(CFP_RATIO)
+  }
+
 BBGData.Read.EBITDA <-
   function(Ref.Year)
   {
@@ -67,6 +111,26 @@ BBGData.Read.EBITDA <-
     EBITDA$EBITDA[Indx1&Indx2] <- OI[Indx1&Indx2] + DA[Indx1&Indx2]
     EBITDA$EBITDA[Indx1&!Indx2] <- OI[Indx1&!Indx2] + DA[Indx1&!Indx2] + IE[Indx1&!Indx2]
     return(EBITDA)
+  }
+
+BBGData.Road.EV <-
+  function(Ref.Year)
+  {
+    #EV = Market Cap + LT Debt + max(ST Debt - Cash, 0)
+    #Cash Flow to Price Ratio
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+    fileds <- c("CUR_MKT_CAP","BS_LT_BORROW","BS_ST_BORROW","BS_CASH_NEAR_CASH_ITEM")
+    TEMP <- bdh(Universe$Ticker, fileds, start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    EV <- cbind.data.frame(DATE,lapply(TEMP, (function(x) 
+      x$CUR_MKT_CAP + x$BS_LT_BORROW + max(x$BS_ST_BORROW - x$BS_CASH_NEAR_CASH_ITEM, 0))))
+    
+    return(EV)
   }
 
 BBGData.Initialize <-
