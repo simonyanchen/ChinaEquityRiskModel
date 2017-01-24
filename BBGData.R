@@ -21,7 +21,7 @@ BBGData.Load <-
 BBGData.Read.PX_LAST <-
   function(Ref.Year)
   {
-    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = "")) - 1
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
     Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
@@ -29,6 +29,28 @@ BBGData.Read.PX_LAST <-
     DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
     PX_LAST <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_LAST)))
     return(PX_LAST)
+  }
+
+BBGData.Read.BP_RATIO <-
+  function(Ref.Year)
+  {
+    #Book to Price Ratio
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
+    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
+    BOOK <- bdh(Universe$Ticker, "BOOK_VAL_PER_SH", start.date = S.Date, end.date = E.Date, options = Options)
+    BOOK <- lapply(BOOK, (function(x) x$BOOK_VAL_PER_SH[x$date %in% DATE]))[Universe$Ticker]
+    
+    BP_RATIO <- as.data.frame(BOOK)/as.data.frame(PRICE)
+    names(BP_RATIO) <- Universe$Ticker
+    BP_RATIO <- cbind.data.frame(DATE, BP_RATIO)
+    
+    return(BP_RATIO)
   }
 
 BBGData.Read.EBITDA <-
