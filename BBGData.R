@@ -25,8 +25,9 @@ BBGData.Read.PX_LAST <-
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
     Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
-    TEMP <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
     DATE <- BBGData.Calendar(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- TEMP[Universe$Ticker]
     PX_LAST <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_LAST)))
     return(PX_LAST)
   }
@@ -41,8 +42,8 @@ BBGData.Read.BP_RATIO <-
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.Calendar(Ref.Year)
-    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
-    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
+    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- PRICE[Universe$Ticker]
     BOOK <- bdh(Universe$Ticker, "BOOK_VAL_PER_SH", start.date = S.Date, end.date = E.Date, options = Options)
     BOOK <- lapply(BOOK, (function(x) x$BOOK_VAL_PER_SH[x$date %in% DATE]))[Universe$Ticker]
     
@@ -63,13 +64,12 @@ BBGData.Read.EP_RATIO <-
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.Calendar(Ref.Year)
-    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
-    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
-    EARNING <- bdh(Universe$Ticker, "TRAIL_12M_EPS_BEF_XO_ITEM", start.date = S.Date, end.date = E.Date, options = Options)
-    EARNING <- lapply(EARNING, (function(x) x$TRAIL_12M_EPS_BEF_XO_ITEM[x$date %in% DATE]))[Universe$Ticker]
+    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- PRICE[Universe$Ticker]
+    EARNING <- BBGData.Read.EARNING(Ref.Year)
+    EARNING <- EARNING[Universe$Ticker]
     
-    EP_RATIO <- as.data.frame(EARNING)/as.data.frame(PRICE)
-    names(EP_RATIO) <- Universe$Ticker
+    EP_RATIO <- EARNING/PRICE
     EP_RATIO <- cbind.data.frame(DATE, EP_RATIO)
     
     return(EP_RATIO)
@@ -85,8 +85,8 @@ BBGData.Read.CFP_RATIO <-
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.Calendar(Ref.Year)
-    PRICE <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
-    PRICE <- lapply(PRICE, (function(x) x$PX_LAST[x$date %in% DATE]))[Universe$Ticker]
+    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- PRICE[Universe$Ticker]
     CF <- bdh(Universe$Ticker, "TRAIL_12M_CASH_FROM_OPER", start.date = S.Date, end.date = E.Date, options = Options)
     CF <- lapply(CF, (function(x) x$TRAIL_12M_CASH_FROM_OPER[x$date %in% DATE]))[Universe$Ticker]
     
@@ -113,7 +113,7 @@ BBGData.Read.EBITDA <-
     return(EBITDA)
   }
 
-BBGData.Road.EV <-
+BBGData.Read.EV <-
   function(Ref.Year)
   {
     #EV = Market Cap + LT Debt + max(ST Debt - Cash, 0)
@@ -124,13 +124,49 @@ BBGData.Road.EV <-
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.Calendar(Ref.Year)
-    fileds <- c("CUR_MKT_CAP","BS_LT_BORROW","BS_ST_BORROW","BS_CASH_NEAR_CASH_ITEM")
+    fileds <- c("CUR_TOT_ASSET","BS_LT_BORROW","BS_ST_BORROW","BS_CASH_NEAR_CASH_ITEM")
     TEMP <- bdh(Universe$Ticker, fileds, start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
     EV <- cbind.data.frame(DATE,lapply(TEMP, (function(x) 
-      x$CUR_MKT_CAP + x$BS_LT_BORROW + max(x$BS_ST_BORROW - x$BS_CASH_NEAR_CASH_ITEM, 0))))
+      x$CUR_TOT_ASSET + x$BS_LT_BORROW + max(x$BS_ST_BORROW - x$BS_CASH_NEAR_CASH_ITEM, 0))))
     
     return(EV)
+  }
+
+BBGData.Read.TOT_ASSET <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.Calendar(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "BS_TOT_ASSET", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    TOT_ASSET <- as.data.frame(TEMP)
+    names(TOT_ASSET) <- Universe$Ticker
+    TOT_ASSET <- cbind.data.frame(DATE, TOT_ASSET)
+    
+    return(TOT_ASSET)
+  }
+
+BBGData.Read.MKT_CAP <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.Calendar(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "CUR_MKT_CAP", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    MKT_CAP <- as.data.frame(TEMP)
+    names(MKT_CAP) <- Universe$Ticker
+    MKT_CAP <- cbind.data.frame(DATE, MKT_CAP)
+    
+    return(MKT_CAP)
   }
 
 BBGData.Read.SALES <-
@@ -151,6 +187,25 @@ BBGData.Read.SALES <-
     return(SALES)
   }
 
+BBGData.Read.EARNING <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.Calendar(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "TRAIL_12M_EPS_BEF_XO_ITEM", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x$TRAIL_12M_EPS_BEF_XO_ITEM[x$date %in% DATE]))[Universe$Ticker]
+    
+    EARNING <- as.data.frame(TEMP)
+    names(EARNING) <- Universe$Ticker
+    EARNING <- cbind.data.frame(DATE, EARNING)
+    
+    return(EARNING)
+  }
+
 BBGData.Read.BEST_EPS <-
   function(Ref.Year)
   {
@@ -167,6 +222,47 @@ BBGData.Read.BEST_EPS <-
     BEST_EPS <- cbind.data.frame(DATE, BEST_EPS)
     
     return(BEST_EPS)
+  }
+
+BBGData.Read.DVD_YIELD <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    TEMP <- bdh(Universe$Ticker, "EQY_DVD_YLD_IND_NET", start.date = S.Date, end.date = E.Date, options = Options)
+    DATE <- BBGData.Calendar(Ref.Year)
+    DVD_YIELD <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_DVD_YLD_IND_NET)))
+    return(DVD_YIELD)
+  }
+
+BBGData.Read.SH_OUT <-
+  function(Ref.Year)
+  {
+    #The value is quoted in millions.
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    TEMP <- bdh(Universe$Ticker, "EQY_SH_OUT", start.date = S.Date, end.date = E.Date, options = Options)
+    DATE <- BBGData.Calendar(Ref.Year)
+    SH_OUT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_SH_OUT)))
+    return(SH_OUT)
+  }
+
+BBGData.Read.PX_VOL <-
+  function(Ref.Year)
+  {
+    #The value is quoted in number of shares.
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    TEMP <- bdh(Universe$Ticker, "PX_VOLUME", start.date = S.Date, end.date = E.Date, options = Options)
+    DATE <- BBGData.Calendar(Ref.Year)
+    PX_VOL <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_VOLUME)))
+    return(PX_VOL)
   }
 
 BBGData.Calendar <-
