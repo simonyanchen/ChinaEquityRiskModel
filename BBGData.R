@@ -27,13 +27,27 @@ BBGData.Read.PX_LAST <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
-    DATE <- BBGData.Calendar(Ref.Year)
+    Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- TEMP[Universe$Ticker]
     PX_LAST <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_LAST)))
     return(PX_LAST)
+  }
+
+BBGData.Read.CHG_PCT <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "CHG_PCT_1D", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- TEMP[Universe$Ticker]
+    CHG_PCT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$CHG_PCT_1D)))
+    return(CHG_PCT)
   }
 
 BBGData.Read.SH_OUT <-
@@ -42,10 +56,10 @@ BBGData.Read.SH_OUT <-
     #The value is quoted in millions.
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     TEMP <- bdh(Universe$Ticker, "EQY_SH_OUT", start.date = S.Date, end.date = E.Date, options = Options)
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     SH_OUT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_SH_OUT)))
     return(SH_OUT)
   }
@@ -53,13 +67,13 @@ BBGData.Read.SH_OUT <-
 BBGData.Read.PX_VOL <-
   function(Ref.Year)
   {
-    #The value is quoted in number of shares.
+    #The value is quoted in units.
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
     Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                          names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     TEMP <- bdh(Universe$Ticker, "PX_VOLUME", start.date = S.Date, end.date = E.Date, options = Options)
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_DAY(Ref.Year)
     PX_VOL <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_VOLUME)))
     return(PX_VOL)
   }
@@ -71,14 +85,15 @@ BBGData.Read.PX_VOL <-
 BBGData.Read.TOT_ASSET <-
   function(Ref.Year)
   {
+    #The value is quoted in millions.
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BS_TOT_ASSET", start.date = S.Date, end.date = E.Date, options = Options)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    TEMP <- lapply(TEMP, (function(x) x$BS_TOT_ASSET[x$date %in% DATE]))[Universe$Ticker]
     TOT_ASSET <- as.data.frame(TEMP)
     names(TOT_ASSET) <- Universe$Ticker
     TOT_ASSET <- cbind.data.frame(DATE, TOT_ASSET)
@@ -86,24 +101,44 @@ BBGData.Read.TOT_ASSET <-
     return(TOT_ASSET)
   }
 
-BBGData.Read.EV <-
+BBGData.Read.BOOk_VAL <-
   function(Ref.Year)
   {
-    #EV = Market Cap + LT Debt + max(ST Debt - Cash, 0)
-    #Cash Flow to Price Ratio
+    #Book value 
+    #The value is quoted in millions
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
-    fileds <- c("CUR_TOT_ASSET","BS_LT_BORROW","BS_ST_BORROW","BS_CASH_NEAR_CASH_ITEM")
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "TOT_COMMON_EQY", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x$TOT_COMMON_EQY[x$date %in% DATE]))[Universe$Ticker]
+    BOOk_VAL <- as.data.frame(TEMP)
+    names(BOOk_VAL) <- Universe$Ticker
+    BOOk_VAL <- cbind.data.frame(DATE, BOOk_VAL)
+    
+    return(BOOk_VAL)
+  }
+
+BBGData.Read.DEBT <-
+  function(Ref.Year)
+  {
+    #The value is quoted in millions.
+    #LT Debt + max(ST Debt - Cash, 0)
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    fileds <- c("BS_LT_BORROW","BS_ST_BORROW","BS_CASH_NEAR_CASH_ITEM")
     TEMP <- bdh(Universe$Ticker, fileds, start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
-    EV <- cbind.data.frame(DATE,lapply(TEMP, (function(x) 
-      x$CUR_TOT_ASSET + x$BS_LT_BORROW + max(x$BS_ST_BORROW - x$BS_CASH_NEAR_CASH_ITEM, 0))))
+    DEBT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) 
+      x$BS_LT_BORROW + max(x$BS_ST_BORROW - x$BS_CASH_NEAR_CASH_ITEM, 0))))
     
-    return(EV)
+    return(DEBT)
   }
 
 BBGData.Read.MKT_CAP <-
@@ -111,17 +146,35 @@ BBGData.Read.MKT_CAP <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "CUR_MKT_CAP", start.date = S.Date, end.date = E.Date, options = Options)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    TEMP <- lapply(TEMP, (function(x) x$CUR_MKT_CAP[x$date %in% DATE]))[Universe$Ticker]
     MKT_CAP <- as.data.frame(TEMP)
     names(MKT_CAP) <- Universe$Ticker
     MKT_CAP <- cbind.data.frame(DATE, MKT_CAP)
     
     return(MKT_CAP)
+  }
+
+BBGData.Read.EV <-
+  function(Ref.Year)
+  {
+    #EV = Market Cap + LT Debt + max(ST Debt - Cash, 0)
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    MKT_CAP <- BBGData.Read.MKT_CAP(Ref.Year)
+    MKT_CAP <- MKT_CAP[Universe$Ticker]
+    DEBT <- BBGData.Read.DEBT(Ref.Year)
+    DEBT <- DEBT[Universe$Ticker]
+    
+    EV <- as.data.frame(MKT_CAP) + as.data.frame(DEBT)
+    names(EV) <- Universe$Ticker
+    EV <- cbind.data.frame(DATE, EV)
+    
+    return(EV)
   }
 
 BBGData.Read.EBITDA <-
@@ -145,10 +198,10 @@ BBGData.Read.SALES <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "SALES_REV_TURN", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
     SALES <- as.data.frame(TEMP)
@@ -163,10 +216,10 @@ BBGData.Read.EARNING <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "TRAIL_12M_EPS_BEF_XO_ITEM", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x$TRAIL_12M_EPS_BEF_XO_ITEM[x$date %in% DATE]))[Universe$Ticker]
     
@@ -185,18 +238,16 @@ BBGData.Read.BP_RATIO <-
   function(Ref.Year)
   {
     #Book to Price Ratio
-    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
-    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     PRICE <- BBGData.Read.PX_LAST(Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
-    BOOK <- bdh(Universe$Ticker, "BOOK_VAL_PER_SH", start.date = S.Date, end.date = E.Date, options = Options)
-    BOOK <- lapply(BOOK, (function(x) x$BOOK_VAL_PER_SH[x$date %in% DATE]))[Universe$Ticker]
+    BOOK <- BBGData.Read.BOOk_VAL(Ref.Year)
+    BOOK <- BOOK[Universe$Ticker]
+    SH_OUT <- BBGData.Read.SH_OUT(Ref.Year)
+    SH_OUT <- SH_OUT[Universe$Ticker]
     
-    BP_RATIO <- as.data.frame(BOOK)/as.data.frame(PRICE)
+    BP_RATIO <- as.data.frame(BOOK)/as.data.frame(SH_OUT)/as.data.frame(PRICE)
     names(BP_RATIO) <- Universe$Ticker
     BP_RATIO <- cbind.data.frame(DATE, BP_RATIO)
     
@@ -209,10 +260,10 @@ BBGData.Read.EP_RATIO <-
     #Earnings to Price Ratio
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     PRICE <- BBGData.Read.PX_LAST(Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
     EARNING <- BBGData.Read.EARNING(Ref.Year)
@@ -230,10 +281,10 @@ BBGData.Read.CFP_RATIO <-
     #Cash Flow to Price Ratio
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     PRICE <- BBGData.Read.PX_LAST(Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
     CF <- bdh(Universe$Ticker, "TRAIL_12M_CASH_FROM_OPER", start.date = S.Date, end.date = E.Date, options = Options)
@@ -251,10 +302,10 @@ BBGData.Read.DVD_YIELD <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     TEMP <- bdh(Universe$Ticker, "EQY_DVD_YLD_IND_NET", start.date = S.Date, end.date = E.Date, options = Options)
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     DVD_YIELD <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_DVD_YLD_IND_NET)))
     return(DVD_YIELD)
   }
@@ -268,10 +319,10 @@ BBGData.Read.BEST_EPS <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_EPS", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
     BEST_EPS <- as.data.frame(TEMP)
@@ -286,10 +337,10 @@ BBGData.Read.BEST_SALES <-
   {
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
-    DATE <- BBGData.Calendar(Ref.Year)
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
     BEST_SALES <- as.data.frame(TEMP)
@@ -303,11 +354,11 @@ BBGData.Read.BEST_SALES <-
 # Utilities
 #
 
-BBGData.Calendar <-
+BBGData.CDR_DAY <-
   function(Ref.Year)
   {
-    #Calendar Dates
-    filepath <- paste("Data/Calendar", Ref.Year, ".RData", sep = "")
+    #Calendar Dates Daily
+    filepath <- paste("Data/CDR_DAY", Ref.Year, ".RData", sep = "")
     
     if(file.exists(filepath)){
       load(filepath)
@@ -316,6 +367,26 @@ BBGData.Calendar <-
       E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
       Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                            names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+      DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+      
+      save(DATE, file = filepath)
+    }
+    return(DATE)
+  }
+
+BBGData.CDR_WEEK <-
+  function(Ref.Year)
+  {
+    #Calendar Dates Weekly
+    filepath <- paste("Data/CDR_WEEK", Ref.Year, ".RData", sep = "")
+    
+    if(file.exists(filepath)){
+      load(filepath)
+    }else{
+      S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+      E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+      Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                           names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
       DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
       
       save(DATE, file = filepath)
