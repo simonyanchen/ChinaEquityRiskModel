@@ -45,4 +45,18 @@ Factor.Value <-
     EE_RATIO <- Utils.CleanData("EE_RATIO", Ref.Date, FALSE, FALSE)
     EEP_RATIO <- Utils.CleanData("EEP_RATIO", Ref.Date, FALSE, FALSE)
     
+    DATE <- BP_RATIO$DATE
+    
+    Value <- subset(BP_RATIO, select = -DATE) * 0.17 +
+      subset(EP_RATIO, select = -DATE) * 0.19 +
+      subset(CFP_RATIO, select = -DATE) * 0.07 +
+      subset(SE_RATIO, select = -DATE) * 0.15 +
+      subset(EE_RATIO, select = -DATE) * 0.21 +
+      subset(EEP_RATIO, select = -DATE) * 0.21
+    
+    Value <- cbind.data.frame(DATE, Value)
+    Index <- match(Ref.Date, DATE)
+    Value <- Value[(Index-53):Index,]
+    
+    return(Value)
   }

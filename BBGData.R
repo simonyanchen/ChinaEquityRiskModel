@@ -192,6 +192,24 @@ BBGData.Read.EBITDA <-
     #EBITDA$EBITDA[Indx1&!Indx2] <- OI[Indx1&!Indx2] + DA[Indx1&!Indx2] + IE[Indx1&!Indx2]
     #return(EBITDA)
     
+    #Temp
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "SALES_REV_TURN", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x$SALES_REV_TURN[x$date %in% DATE]))[Universe$Ticker]
+    
+    SALES <- as.data.frame(TEMP)
+    names(SALES) <- Universe$Ticker
+    SALES <- cbind.data.frame(DATE, SALES)
+    
+    #TEMP <- TEMP[Universe$Ticker]
+    #SALES <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$SALES_REV_TURN)))
+    
+    return(SALES)
     
   }
 
