@@ -101,7 +101,7 @@ BBGData.Read.TOT_ASSET <-
     return(TOT_ASSET)
   }
 
-BBGData.Read.BOOk_VAL <-
+BBGData.Read.BOOK_VAL <-
   function(Ref.Year)
   {
     #Book value 
@@ -114,11 +114,11 @@ BBGData.Read.BOOk_VAL <-
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "TOT_COMMON_EQY", start.date = S.Date, end.date = E.Date, options = Options)
     TEMP <- lapply(TEMP, (function(x) x$TOT_COMMON_EQY[x$date %in% DATE]))[Universe$Ticker]
-    BOOk_VAL <- as.data.frame(TEMP)
-    names(BOOk_VAL) <- Universe$Ticker
-    BOOk_VAL <- cbind.data.frame(DATE, BOOk_VAL)
+    BOOK_VAL <- as.data.frame(TEMP)
+    names(BOOK_VAL) <- Universe$Ticker
+    BOOK_VAL <- cbind.data.frame(DATE, BOOK_VAL)
     
-    return(BOOk_VAL)
+    return(BOOK_VAL)
   }
 
 BBGData.Read.DEBT <-
@@ -167,7 +167,7 @@ BBGData.Read.EV <-
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     MKT_CAP <- BBGData.Read.MKT_CAP(Ref.Year)
     MKT_CAP <- MKT_CAP[Universe$Ticker]
-    DEBT <- BBGData.Read.DEBT(Ref.Year)
+    DEBT <- BBGData.Load("DEBT",Ref.Year)
     DEBT <- DEBT[Universe$Ticker]
     
     EV <- as.data.frame(MKT_CAP) + as.data.frame(DEBT)
@@ -181,16 +181,18 @@ BBGData.Read.EBITDA <-
   function(Ref.Year)
   {
     #EBITDA = Operating Income + Depreciation & Amortization (+ Interest Expense)
-    OverRides <- structure(Ref.Year, names = "EQY_FUND_YEAR")
-    EBITDA <- bdp(Universe$Ticker, "EBITDA", overrides = OverRides)
-    OI <- bdp(Universe$Ticker, "IS_OPER_INC", overrides = OverRides)$IS_OPER_INC
-    DA <- bdp(Universe$Ticker, "CF_DEPR_AMORT", overrides = OverRides)$CF_DEPR_AMORT
-    IE <- bdp(Universe$Ticker, "IS_INT_EXPENSES", overrides = OverRides)$IS_INT_EXPENSES
-    Indx1 <- is.na(EBITDA$EBITDA)
-    Indx2 <- is.na(IE)
-    EBITDA$EBITDA[Indx1&Indx2] <- OI[Indx1&Indx2] + DA[Indx1&Indx2]
-    EBITDA$EBITDA[Indx1&!Indx2] <- OI[Indx1&!Indx2] + DA[Indx1&!Indx2] + IE[Indx1&!Indx2]
-    return(EBITDA)
+    #OverRides <- structure(Ref.Year, names = "EQY_FUND_YEAR")
+    #EBITDA <- bdp(Universe$Ticker, "EBITDA", overrides = OverRides)
+    #OI <- bdp(Universe$Ticker, "IS_OPER_INC", overrides = OverRides)$IS_OPER_INC
+    #DA <- bdp(Universe$Ticker, "CF_DEPR_AMORT", overrides = OverRides)$CF_DEPR_AMORT
+    #IE <- bdp(Universe$Ticker, "IS_INT_EXPENSES", overrides = OverRides)$IS_INT_EXPENSES
+    #Indx1 <- is.na(EBITDA$EBITDA)
+    #Indx2 <- is.na(IE)
+    #EBITDA$EBITDA[Indx1&Indx2] <- OI[Indx1&Indx2] + DA[Indx1&Indx2]
+    #EBITDA$EBITDA[Indx1&!Indx2] <- OI[Indx1&!Indx2] + DA[Indx1&!Indx2] + IE[Indx1&!Indx2]
+    #return(EBITDA)
+    
+    
   }
 
 BBGData.Read.SALES <-
@@ -203,14 +205,19 @@ BBGData.Read.SALES <-
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "SALES_REV_TURN", start.date = S.Date, end.date = E.Date, options = Options)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    TEMP <- lapply(TEMP, (function(x) x$SALES_REV_TURN[x$date %in% DATE]))[Universe$Ticker]
+    
     SALES <- as.data.frame(TEMP)
     names(SALES) <- Universe$Ticker
     SALES <- cbind.data.frame(DATE, SALES)
     
+    #TEMP <- TEMP[Universe$Ticker]
+    #SALES <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$SALES_REV_TURN)))
+    
     return(SALES)
   }
 
+#Per Share
 BBGData.Read.EARNING <-
   function(Ref.Year)
   {
@@ -240,11 +247,11 @@ BBGData.Read.BP_RATIO <-
     #Book to Price Ratio
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
-    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- BBGData.Load("PX_LAST",Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
-    BOOK <- BBGData.Read.BOOk_VAL(Ref.Year)
+    BOOK <- BBGData.Load("BOOK_VAL",Ref.Year)
     BOOK <- BOOK[Universe$Ticker]
-    SH_OUT <- BBGData.Read.SH_OUT(Ref.Year)
+    SH_OUT <- BBGData.Load("SH_OUT",Ref.Year)
     SH_OUT <- SH_OUT[Universe$Ticker]
     
     BP_RATIO <- as.data.frame(BOOK)/as.data.frame(SH_OUT)/as.data.frame(PRICE)
@@ -257,16 +264,11 @@ BBGData.Read.BP_RATIO <-
 BBGData.Read.EP_RATIO <-
   function(Ref.Year)
   {
-    #Earnings to Price Ratio
-    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
-    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
-    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- BBGData.Load("PX_LAST",Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
-    EARNING <- BBGData.Read.EARNING(Ref.Year)
+    EARNING <- BBGData.Load("EARNING",Ref.Year)
     EARNING <- EARNING[Universe$Ticker]
     
     EP_RATIO <- EARNING/PRICE
@@ -285,16 +287,66 @@ BBGData.Read.CFP_RATIO <-
                          names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
-    PRICE <- BBGData.Read.PX_LAST(Ref.Year)
+    PRICE <- BBGData.Load("PX_LAST",Ref.Year)
     PRICE <- PRICE[Universe$Ticker]
     CF <- bdh(Universe$Ticker, "TRAIL_12M_CASH_FROM_OPER", start.date = S.Date, end.date = E.Date, options = Options)
     CF <- lapply(CF, (function(x) x$TRAIL_12M_CASH_FROM_OPER[x$date %in% DATE]))[Universe$Ticker]
+    SH_OUT <- BBGData.Load("SH_OUT",Ref.Year)
+    SH_OUT <- SH_OUT[Universe$Ticker]
     
-    CFP_RATIO <- as.data.frame(CF)/as.data.frame(PRICE)
+    CFP_RATIO <- as.data.frame(CF)/as.data.frame(SH_OUT)/as.data.frame(PRICE)
     names(CFP_RATIO) <- Universe$Ticker
     CFP_RATIO <- cbind.data.frame(DATE, CFP_RATIO)
     
     return(CFP_RATIO)
+  }
+
+BBGData.Read.SE_RATIO <-
+  function(Ref.Year)
+  {
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    EV <- BBGData.Load("EV",Ref.Year)
+    EV <- EV[Universe$Ticker]
+    SALES <- BBGData.Load("SALES",Ref.Year)
+    SALES <- SALES[Universe$Ticker]
+    
+    SE_RATIO <- as.data.frame(SALES)/as.data.frame(EV)
+    SE_RATIO <- cbind.data.frame(DATE, SE_RATIO)
+    
+    return(SE_RATIO)
+  }
+
+BBGData.Read.EE_RATIO <-
+  function(Ref.Year)
+  {
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    EV <- BBGData.Load("EV",Ref.Year)
+    EV <- EV[Universe$Ticker]
+    EBITDA <- BBGData.Load("EBITDA",Ref.Year)
+    EBITDA <- EBITDA[Universe$Ticker]
+    
+    EE_RATIO <- as.data.frame(EBITDA)/as.data.frame(EV)
+    EE_RATIO <- cbind.data.frame(DATE, EE_RATIO)
+    
+    return(EE_RATIO)
+  }
+
+BBGData.Read.EEP_RATIO <-
+  function(Ref.Year)
+  {
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    PRICE <- BBGData.Load("PX_LAST",Ref.Year)
+    PRICE <- PRICE[Universe$Ticker]
+    BEST_EPS <- BBGData.Load("BEST_EPS",Ref.Year)
+    BEST_EPS <- BEST_EPS[Universe$Ticker]
+    
+    EEP_RATIO <- as.data.frame(BEST_EPS)/as.data.frame(PRICE)
+    EEP_RATIO <- cbind.data.frame(DATE, EEP_RATIO)
+    
+    return(EEP_RATIO)
   }
 
 BBGData.Read.DVD_YIELD <-
@@ -314,6 +366,7 @@ BBGData.Read.DVD_YIELD <-
 # Forecast
 #
 
+#The BEst (Bloomberg Estimates) Earnings Per Share
 BBGData.Read.BEST_EPS <-
   function(Ref.Year)
   {
@@ -324,11 +377,8 @@ BBGData.Read.BEST_EPS <-
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_EPS", start.date = S.Date, end.date = E.Date, options = Options)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
-    BEST_EPS <- as.data.frame(TEMP)
-    names(BEST_EPS) <- Universe$Ticker
-    BEST_EPS <- cbind.data.frame(DATE, BEST_EPS)
-    
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_EPS <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_EPS)))
     return(BEST_EPS)
   }
 
