@@ -375,6 +375,7 @@ BBGData.Read.DVD_YIELD <-
     Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                          names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     TEMP <- bdh(Universe$Ticker, "EQY_DVD_YLD_IND_NET", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- TEMP[Universe$Ticker]
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     DVD_YIELD <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_DVD_YLD_IND_NET)))
     return(DVD_YIELD)

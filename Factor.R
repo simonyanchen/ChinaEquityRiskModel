@@ -60,3 +60,21 @@ Factor.Value <-
     
     return(Value)
   }
+
+#Most recently announced net dividend divided by the current market price
+Factor.Dividend_Yield <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    DVD_YIELD <- Utils.CleanData("DVD_YIELD", Ref.Date, TRUE, FALSE)
+    
+    Index <- match(Ref.Date, DVD_YIELD$DATE)
+    Dividend_Yield <- DVD_YIELD[(Index-53):Index,]
+    
+    return(Dividend_Yield)
+  }
+

@@ -1,1 +1,1 @@
-Folder of Bloomberg Data
+Folder for Bloomberg Data

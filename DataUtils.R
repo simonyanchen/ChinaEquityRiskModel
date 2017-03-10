@@ -19,7 +19,10 @@ Utils.CleanData <-
     
     if(NA.Fill){
       #Fill NA using previous value; No action for leading NA temporarily
-      ret <- zoo::na.locf(ret, na.rm = FALSE)
+      #ret <- zoo::na.locf(ret, na.rm = FALSE)
+      DATE <- ret$DATE
+      ret <- cbind.data.frame(DATE, lapply(subset(ret, select = -DATE),
+                                    (function(x) zoo::na.locf(x, na.rm = FALSE))))
       
     }else{
       #Replace NA with zero
