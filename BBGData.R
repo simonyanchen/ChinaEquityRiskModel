@@ -59,23 +59,26 @@ BBGData.Read.SH_OUT <-
     Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
                          names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     TEMP <- bdh(Universe$Ticker, "EQY_SH_OUT", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- TEMP[Universe$Ticker]
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     SH_OUT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_SH_OUT)))
     return(SH_OUT)
   }
 
-BBGData.Read.PX_VOL <-
+BBGData.Read.VOL_RATIO <-
   function(Ref.Year)
   {
     #The value is quoted in units.
     S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
     E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
-    Options <- structure(c("NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
-                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
-    TEMP <- bdh(Universe$Ticker, "PX_VOLUME", start.date = S.Date, end.date = E.Date, options = Options)
     DATE <- BBGData.CDR_DAY(Ref.Year)
-    PX_VOL <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_VOLUME)))
-    return(PX_VOL)
+    Options <- structure(c("NON_TRADING_WEEKDAYS","NIL_VALUE"), 
+                         names = c("nonTradingDayFillOption","nonTradingDayFillMethod"))
+    fileds <- c("PX_VOLUME","EQY_SH_OUT")
+    TEMP <- bdh(Universe$Ticker, fileds, start.date = S.Date, end.date = E.Date, options = Options, int.as.double = TRUE)
+    TEMP <- TEMP[Universe$Ticker]
+    VOL_RATIO <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$PX_VOLUME/10^6/x$EQY_SH_OUT)))
+    return(VOL_RATIO)
   }
 
 #

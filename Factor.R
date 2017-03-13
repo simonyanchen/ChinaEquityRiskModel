@@ -9,7 +9,7 @@ Factor.Momentum <-
     #Find Last Friday
     Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
     #Bloomberg Data
-    CHG_PCT <- Utils.CleanData("CHG_PCT", Ref.Date, FALSE, TRUE)
+    CHG_PCT <- Utils.CleanData("CHG_PCT", Ref.Date, FALSE, 1)
     
     DATE <- CHG_PCT$DATE
     TEMP <- as.data.frame(zoo::rollmean(subset(CHG_PCT, select = -DATE), 53, na.pad = TRUE, align = "right"))
@@ -17,8 +17,10 @@ Factor.Momentum <-
     TEMP <- rbind(TEMP[1,],head(TEMP,-1))
     Momentum <- cbind.data.frame(DATE, TEMP)
     
-    Index <- match(Ref.Date, DATE)
-    Momentum <- Momentum[(Index-53):Index,]
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    
+    Momentum <- Momentum[Index,]
     
     return(Momentum)
   }
@@ -38,12 +40,12 @@ Factor.Value <-
     #Find Last Friday
     Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
     #Bloomberg Data
-    BP_RATIO <- Utils.CleanData("BP_RATIO", Ref.Date, FALSE, FALSE)
-    EP_RATIO <- Utils.CleanData("EP_RATIO", Ref.Date, FALSE, FALSE)
-    CFP_RATIO <- Utils.CleanData("CFP_RATIO", Ref.Date, FALSE, FALSE)
-    SE_RATIO <- Utils.CleanData("SE_RATIO", Ref.Date, FALSE, FALSE)
-    EE_RATIO <- Utils.CleanData("EE_RATIO", Ref.Date, FALSE, FALSE)
-    EEP_RATIO <- Utils.CleanData("EEP_RATIO", Ref.Date, FALSE, FALSE)
+    BP_RATIO <- Utils.CleanData("BP_RATIO", Ref.Date, FALSE, 0)
+    EP_RATIO <- Utils.CleanData("EP_RATIO", Ref.Date, FALSE, 0)
+    CFP_RATIO <- Utils.CleanData("CFP_RATIO", Ref.Date, FALSE, 0)
+    SE_RATIO <- Utils.CleanData("SE_RATIO", Ref.Date, FALSE, 0)
+    EE_RATIO <- Utils.CleanData("EE_RATIO", Ref.Date, FALSE, 0)
+    EEP_RATIO <- Utils.CleanData("EEP_RATIO", Ref.Date, FALSE, 0)
     
     DATE <- BP_RATIO$DATE
     
@@ -55,8 +57,10 @@ Factor.Value <-
       subset(EEP_RATIO, select = -DATE) * 0.21
     
     Value <- cbind.data.frame(DATE, Value)
-    Index <- match(Ref.Date, DATE)
-    Value <- Value[(Index-53):Index,]
+    
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    Value <- Value[Index,]
     
     return(Value)
   }
@@ -70,11 +74,86 @@ Factor.Dividend_Yield <-
     #Find Last Friday
     Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
     #Bloomberg Data
-    DVD_YIELD <- Utils.CleanData("DVD_YIELD", Ref.Date, TRUE, FALSE)
+    DVD_YIELD <- Utils.CleanData("DVD_YIELD", Ref.Date, TRUE, 0)
     
-    Index <- match(Ref.Date, DVD_YIELD$DATE)
-    Dividend_Yield <- DVD_YIELD[(Index-53):Index,]
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DVD_YIELD$DATE)
+    Dividend_Yield <- DVD_YIELD[Index,]
     
     return(Dividend_Yield)
   }
 
+#Combination of the following descriptors:
+#Log(Market Capitalization) (32%)
+#Log(Sales) (33%)
+#Log(Total Assets) (35%)
+Factor.Size <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    MKT_CAP <- Utils.CleanData("MKT_CAP", Ref.Date, TRUE, 0)
+    SALES <- Utils.CleanData("SALES", Ref.Date, TRUE, 0)
+    TOT_ASSET <- Utils.CleanData("TOT_ASSET", Ref.Date, TRUE, 0)
+    
+    DATE <- MKT_CAP$DATE
+    
+    Size <- log(subset(MKT_CAP, select = -DATE)) * 0.32 +
+      log(subset(SALES, select = -DATE)) * 0.33 +
+      log(subset(TOT_ASSET, select = -DATE)) * 0.35
+    
+    Size <- cbind.data.frame(DATE, Size)
+    
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    
+    Size <- Size[Index,]
+    
+    return(Size)
+  }
+
+Factor.Trading <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    VOL_RATIO <- Utils.CleanData("VOL_RATIO", Ref.Date, FALSE, 2)
+    
+    DATE <- VOL_RATIO$DATE
+    
+    VOL_RATIO <- cbind.data.frame(DATE, lapply(subset(VOL_RATIO, select = -DATE),
+                                               (function(x) TTR::EMA(x, n = 504, ratio = log(2)/180))))
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    
+    VOL_RATIO <- VOL_RATIO[Index,]
+  }
+
+# Utis: Regression Period
+Factor.Period <- 
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    filepath <- paste("Factor/Period", format(Ref.Date,"%Y%m%d"), ".RData", sep = "")
+    if(file.exists(filepath)){
+      load(filepath)
+    }else{
+      S.Date <- seq(Ref.Date, by = "-1 years", length = 2)[2]
+      E.Date <- Ref.Date
+      Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                           names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+      DATE <- bdh("SHSZ300 Index","PX_LAST", start.date = S.Date, end.date = E.Date, options = Options)$date
+      
+      save(DATE, file = filepath)
+    }
+    return(DATE)
+  }

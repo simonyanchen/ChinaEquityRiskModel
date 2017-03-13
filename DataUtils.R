@@ -2,20 +2,16 @@
 
 #Combine data for factor calculation
 Utils.CleanData <-
-  function(Data.Name, Ref.Date, NA.Fill = FALSE, Rolling = FALSE)
+  function(Data.Name, Ref.Date, NA.Fill = FALSE, NumRolling = 0)
   {
-    if(Rolling){
-      Data1 <- BBGData.Load(Data.Name, as.character(as.POSIXlt(Ref.Date)$year + 1900 - 2))
-      Data2 <- BBGData.Load(Data.Name, as.character(as.POSIXlt(Ref.Date)$year + 1900 - 1))
-      Data3 <- BBGData.Load(Data.Name, format(Ref.Date,"%Y"))
-      
-      ret <- rbind.data.frame(Data1, Data2, Data3)
-    }else{
-      Data1 <- BBGData.Load(Data.Name, as.character(as.POSIXlt(Ref.Date)$year + 1900 - 1))
-      Data2 <- BBGData.Load(Data.Name, format(Ref.Date,"%Y"))
-      
-      ret <- rbind.data.frame(Data1, Data2)
+    Data <- BBGData.Load(Data.Name, format(Ref.Date,"%Y"))
+    
+    for(i in (0:NumRolling))
+    {
+      TEMP <- BBGData.Load(Data.Name, as.character(as.POSIXlt(Ref.Date)$year + 1900 - 1 - i))
+      Data <- rbind.data.frame(TEMP, Data)
     }
+    ret <- Data
     
     if(NA.Fill){
       #Fill NA using previous value; No action for leading NA temporarily
@@ -23,11 +19,9 @@ Utils.CleanData <-
       DATE <- ret$DATE
       ret <- cbind.data.frame(DATE, lapply(subset(ret, select = -DATE),
                                     (function(x) zoo::na.locf(x, na.rm = FALSE))))
-      
     }else{
       #Replace NA with zero
       ret[is.na(ret)] <- 0
     }
-    
     return(ret)
   }
