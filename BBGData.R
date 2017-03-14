@@ -124,6 +124,45 @@ BBGData.Read.BOOK_VAL <-
     return(BOOK_VAL)
   }
 
+BBGData.Read.INCOME <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "IS_INC_BEF_XO_ITEM", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x$IS_INC_BEF_XO_ITEM[x$date %in% DATE]))[Universe$Ticker]
+    
+    INCOME <- as.data.frame(TEMP)
+    names(INCOME) <- Universe$Ticker
+    INCOME <- cbind.data.frame(DATE, INCOME)
+    
+    return(INCOME)
+  }
+
+BBGData.Read.CASH_FLOW <-
+  function(Ref.Year)
+  {
+    #Cash Flow
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    CF <- bdh(Universe$Ticker, "TRAIL_12M_CASH_FROM_OPER", start.date = S.Date, end.date = E.Date, options = Options)
+    CF <- lapply(CF, (function(x) x$TRAIL_12M_CASH_FROM_OPER[x$date %in% DATE]))[Universe$Ticker]
+    
+    CASH_FLOW <- as.data.frame(CF)
+    names(CASH_FLOW) <- Universe$Ticker
+    CASH_FLOW <- cbind.data.frame(DATE, CASH_FLOW)
+    
+    return(CASH_FLOW)
+  }
+
 BBGData.Read.DEBT <-
   function(Ref.Year)
   {
@@ -420,6 +459,57 @@ BBGData.Read.BEST_SALES <-
     BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
     
     return(BEST_SALES)
+  }
+
+#
+# Special
+#
+BBGData.Read.BETA <-
+  function(Ref.Year)
+  {
+    #One Year Rolling Regression
+    #Beta
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    BETA <- matrix(0,nrow = length(DATE), ncol = length(Universe$Ticker))
+    
+    for (i in 1:length(DATE))
+    {
+      S.DATE <- seq(DATE[i], by = "-1 years", length = 2)[2]
+      E.Date <- DATE[i]
+      Overrides <- structure(c("SH000906 Index",format(S.DATE,"%Y%m%d"),format(E.Date,"%Y%m%d")),
+                             names = c("BETA_OVERRIDE_REL_INDEX","BETA_OVERRIDE_START_DT","BETA_OVERRIDE_END_DT"))
+      TEMP <- bdp(Universe$Ticker, "BETA_RAW_OVERRIDABLE", overrides = Overrides)$BETA_RAW_OVERRIDABLE
+      BETA[i,] <- TEMP
+    }
+    BETA <- as.data.frame(BETA)
+    names(BETA) <- Universe$Ticker
+    BETA <- cbind.data.frame(DATE, BETA)
+    
+    return(BETA)
+  }
+
+BBGData.Read.SIGMA <-
+  function(Ref.Year)
+  {
+    #One Year Rolling Regression
+    #Sigma
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    SIGMA <- matrix(0,nrow = length(DATE), ncol = length(Universe$Ticker))
+    
+    for (i in 1:length(DATE))
+    {
+      S.DATE <- seq(DATE[i], by = "-1 years", length = 2)[2]
+      E.Date <- DATE[i]
+      Overrides <- structure(c("SH000906 Index",format(S.DATE,"%Y%m%d"),format(E.Date,"%Y%m%d")),
+                             names = c("BETA_OVERRIDE_REL_INDEX","BETA_OVERRIDE_START_DT","BETA_OVERRIDE_END_DT"))
+      TEMP <- bdp(Universe$Ticker, "STD_DEV_ERR_OVERRIDABLE", overrides = Overrides)$STD_DEV_ERR_OVERRIDABLE
+      SIGMA[i,] <- TEMP
+    }
+    SIGMA <- as.data.frame(SIGMA)
+    names(SIGMA) <- Universe$Ticker
+    SIGMA <- cbind.data.frame(DATE, SIGMA)
+    
+    return(SIGMA)
   }
 
 #
