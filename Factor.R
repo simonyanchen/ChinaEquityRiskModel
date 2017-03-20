@@ -31,7 +31,7 @@ Factor.Momentum <-
 #Cash Flow to Price (7%)
 #Sales / EV (15%)
 #EBITDA / EV (21%)
-# Forecast Earnings to Price (21%)
+#Forecast Earnings to Price (21%)
 Factor.Value <- 
   function(Ref.Date = NULL)
   {
@@ -235,8 +235,35 @@ Factor.Volatility <-
     return(Volatility)
   }
 
+#Combination of the following descriptors:
+#Total Asset Growth (26%)
+#Sales Growth (19%)
+#Earnings Growth (23%)
+#Forecast of Earnings Growth (11%)
+#Forecast of Sales Growth (21%)
+Factor.Growth <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    TOT_ASSET <- Utils.CleanData("TOT_ASSET", Ref.Date, FALSE, 5)
+    SALES <- Utils.CleanData("SALES", Ref.Date, FALSE, 5)
+    INCOME <- Utils.CleanData("INCOME", Ref.Date, FALSE, 5)
+    
+    TAG <- as.data.frame(zoo::rollapply(subset(TOT_ASSET, select = -DATE), 265, function(x) (tail(x,1) - head(x,1)), fill = NA, align = "right")) /
+      as.data.frame(zoo::rollsum(subset(TOT_ASSET, select = -DATE), 265, na.pad = TRUE, align = "right"))
+    SG <- as.data.frame(zoo::rollapply(subset(SALES, select = -DATE), 265, function(x) (tail(x,1) - head(x,1)), fill = NA, align = "right")) /
+      as.data.frame(zoo::rollsum(subset(SALES, select = -DATE), 265, na.pad = TRUE, align = "right"))
+    IG <- as.data.frame(zoo::rollapply(subset(INCOME, select = -DATE), 265, function(x) (tail(x,1) - head(x,1)), fill = NA, align = "right")) /
+      as.data.frame(zoo::rollsum(subset(INCOME, select = -DATE), 265, na.pad = TRUE, align = "right"))
+    
+    
+  }
 
-# Utils: Regression Period
+#Utils: Regression Period
 Factor.Period <- 
   function(Ref.Date = NULL)
   {
