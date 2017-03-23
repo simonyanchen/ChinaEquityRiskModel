@@ -260,7 +260,82 @@ Factor.Growth <-
     IG <- as.data.frame(zoo::rollapply(subset(INCOME, select = -DATE), 265, function(x) (tail(x,1) - head(x,1)), fill = NA, align = "right")) /
       as.data.frame(zoo::rollsum(subset(INCOME, select = -DATE), 265, na.pad = TRUE, align = "right"))
     
+    DATE <- TOT_ASSET$DATE
+    Growth1 <- TAG * 0.26 + SG * 0.19 + IG * 0.23
+    Growth1 <- cbind.data.frame(DATE, Growth1)
     
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    Growth1 <- Growth1[Index,]
+    
+    BEST_EPS1 <- Utils.CleanData("BEST_EPS1", Ref.Date, FALSE, 0)
+    BEST_EPS2 <- Utils.CleanData("BEST_EPS2", Ref.Date, FALSE, 0)
+    BEST_SALES1 <- Utils.CleanData("BEST_SALES1", Ref.Date, FALSE, 0)
+    BEST_SALES2 <- Utils.CleanData("BEST_SALES2", Ref.Date, FALSE, 0)
+    
+    BEG <- as.data.frame(subset(BEST_EPS2, select = -DATE)/subset(BEST_EPS1, select = -DATE) - 1)
+    BSG <- as.data.frame(subset(BEST_SALES2, select = -DATE)/subset(BEST_SALES1, select = -DATE) - 1)
+    
+    DATE <- BEST_EPS1$DATE
+    Growth2 <- BEG * 0.11 + BSG * 0.21
+    Growth2 <- cbind.data.frame(DATE, Growth2)
+    
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    Growth2 <- Growth2[Index,]
+    
+    DATE <- Period
+    Growth <- cbind.data.frame(DATE, subset(Growth1, select = -DATE) + subset(Growth2, select = -DATE))
+    return(Growth)
+  }
+
+Factor.Leverage <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    DEBT <- Utils.CleanData("DEBT", Ref.Date, FALSE, 0)
+    BOOK_VAL <- Utils.CleanData("BOOK_VAL", Ref.Date, FALSE, 0)
+    MKT_CAP <- Utils.CleanData("MKT_CAP", Ref.Date, FALSE, 0)
+    TOT_ASSET <- Utils.CleanData("TOT_ASSET", Ref.Date, FALSE, 0)
+    
+    DATE <- TOT_ASSET$DATE
+    
+    BLeverage <- as.data.frame(subset(DEBT, select = -DATE) / (subset(BOOK_VAL, select = -DATE) + subset(DEBT, select = -DATE)))
+    MLeverage <- as.data.frame(subset(DEBT, select = -DATE) / (subset(MKT_CAP, select = -DATE) + subset(DEBT, select = -DATE)))
+    DTRAtio <- as.data.frame(subset(DEBT, select = -DATE) / subset(TOT_ASSET, select = -DATE))
+    
+    Leverage <- 0.34 * BLeverage + 0.33 * MLeverage + 0.33 * DTRAtio
+    Leverage <- cbind.data.frame(DATE, Leverage)
+    
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    Leverage <- Leverage[Index,]
+    return(Leverage)
+  }
+
+#Liquidity captures stocks' trading characteristics in terms of price impact, bid-ask spread and trade frequency.
+Factor.Liquidity <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    CHG_PCT <- Utils.CleanData("CHG_PCT", Ref.Date, FALSE, 1)
+    TURNOVER <- Utils.CleanData("TURNOVER", Ref.Date, FALSE, 1)
+    
+    DATE <- CHG_PCT$DATE
+    Liquidity <- cbind.data.frame(DATE, lapply(abs(subset(CHG_PCT, select = -DATE)) / sqrt(subset(TURNOVER, select = -DATE)),
+                                               (function(x) TTR::EMA(x, n = 53, ratio = log(2)/90))))
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, DATE)
+    Trade <- Liquidity[Index,]
+    return(Trade)
   }
 
 #Utils: Regression Period

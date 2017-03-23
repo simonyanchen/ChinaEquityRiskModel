@@ -50,6 +50,8 @@ BBGData.Read.CHG_PCT <-
     return(CHG_PCT)
   }
 
+
+
 BBGData.Read.SH_OUT <-
   function(Ref.Year)
   {
@@ -63,6 +65,20 @@ BBGData.Read.SH_OUT <-
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     SH_OUT <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$EQY_SH_OUT)))
     return(SH_OUT)
+  }
+
+BBGData.Read.TURNOVER <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    TEMP <- bdh(Universe$Ticker, "TURNOVER", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- TEMP[Universe$Ticker]
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TURNOVER <- cbind.data.frame(DATE,lapply(TEMP, (function(x) x$TURNOVER)))
+    return(TURNOVER)
   }
 
 BBGData.Read.VOL_RATIO <-
@@ -443,6 +459,38 @@ BBGData.Read.BEST_EPS <-
     return(BEST_EPS)
   }
 
+BBGData.Read.BEST_EPS1 <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Overrides <- structure("1BF", names = "BEST_FPERIOD_OVERRIDE")
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "BEST_EPS", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_EPS <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_EPS)))
+    return(BEST_EPS)
+  }
+
+BBGData.Read.BEST_EPS2 <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Overrides <- structure("2BF", names = "BEST_FPERIOD_OVERRIDE")
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "BEST_EPS", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_EPS <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_EPS)))
+    return(BEST_EPS)
+  }
+
 BBGData.Read.BEST_SALES <-
   function(Ref.Year)
   {
@@ -453,6 +501,44 @@ BBGData.Read.BEST_SALES <-
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options)
+    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    BEST_SALES <- as.data.frame(TEMP)
+    names(BEST_SALES) <- Universe$Ticker
+    BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
+    
+    return(BEST_SALES)
+  }
+
+BBGData.Read.BEST_SALES1 <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Overrides <- structure("1BF", names = "BEST_FPERIOD_OVERRIDE")
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
+    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
+    BEST_SALES <- as.data.frame(TEMP)
+    names(BEST_SALES) <- Universe$Ticker
+    BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
+    
+    return(BEST_SALES)
+  }
+
+BBGData.Read.BEST_SALES2 <-
+  function(Ref.Year)
+  {
+    S.Date <- as.Date(paste(Ref.Year,"-01-01",sep = ""))
+    E.Date <- as.Date(paste(Ref.Year,"-12-31",sep = ""))
+    Options <- structure(c("CALENDAR","WEEKLY","NON_TRADING_WEEKDAYS","PREVIOUS_VALUE"), 
+                         names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
+    Overrides <- structure("2BF", names = "BEST_FPERIOD_OVERRIDE")
+    #Calendar Dates
+    DATE <- BBGData.CDR_WEEK(Ref.Year)
+    TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
     TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
     BEST_SALES <- as.data.frame(TEMP)
     names(BEST_SALES) <- Universe$Ticker
