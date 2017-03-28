@@ -25,3 +25,23 @@ Utils.CleanData <-
     }
     return(ret)
   }
+
+#Simply normalization
+Utils.Normalize <-
+  function(raw)
+  {
+    tmp <- subset(raw, select = -DATE)
+    DATE <- raw$DATE
+    colnames <- names(tmp)
+    avg <- rowMeans(tmp, na.rm = TRUE)
+    std <- apply(tmp, 1, function(x) sd(x, na.rm = TRUE))
+    #standardization
+    ret <- as.data.frame(lapply(tmp, function(x) (x - avg)/std))
+    names(ret) <- colnames
+    #Capped with +/-3
+    ret[ret>3] <- 3
+    ret[ret<-3] <- -3
+    
+    ret <- cbind.data.frame(DATE, ret)
+    return(ret)
+  }

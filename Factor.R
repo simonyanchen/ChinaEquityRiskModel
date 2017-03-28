@@ -21,6 +21,7 @@ Factor.Momentum <-
     Index <- match(Period, DATE)
     
     Momentum <- Momentum[Index,]
+    Momentum <- Utils.Normalize(Momentum)
     
     return(Momentum)
   }
@@ -61,6 +62,8 @@ Factor.Value <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Value <- Value[Index,]
+    Value <- Utils.Normalize(Value)
+    
     return(Value)
   }
 
@@ -78,6 +81,8 @@ Factor.DivYld <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DVD_YIELD$DATE)
     DivYld <- DVD_YIELD[Index,]
+    DivYld <- Utils.Normalize(DivYld)
+    
     return(DivYld)
   }
 
@@ -108,6 +113,8 @@ Factor.Size <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Size <- Size[Index,]
+    Size <- Utils.Normalize(Size)
+    
     return(Size)
   }
 
@@ -127,6 +134,8 @@ Factor.Trade <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Trade <- VOL_RATIO[Index,]
+    Trade <- Utils.Normalize(Trade)
+    
     return(Trade)
   }
 
@@ -157,6 +166,8 @@ Factor.EarnVariab <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     EarnVariab <- EarnVariab[Index,]
+    EarnVariab <- Utils.Normalize(EarnVariab)
+    
     return(EarnVariab)
   }
 
@@ -186,6 +197,8 @@ Factor.Profit <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Profit <- Profit[Index,]
+    Profit <- Utils.Normalize(Profit)
+    
     return(Profit)
   }
 
@@ -208,9 +221,7 @@ Factor.Volatility <-
     SIGMA <- Utils.CleanData("SIGMA", Ref.Date, TRUE, 0)
     
     DATE <- CHG_PCT$DATE
-    #################
-    #Need normalizing
-    #################
+
     Vol <- as.data.frame(zoo::rollapply(subset(CHG_PCT, select = -DATE), 53, sd, fill = NA, align = "right")) * sqrt(53) / 100
     Range <- as.data.frame(zoo::rollmax(subset(CHG_PCT, select = -DATE), 53, sd, fill = NA, align = "right") /
                             -zoo::rollmax(-subset(PX_LAST, select = -DATE), 53, sd, fill = NA, align = "right"))
@@ -221,6 +232,8 @@ Factor.Volatility <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Volatility1 <- Volatility1[Index,]
+    #Normalized
+    Volatility1 <- Utils.Normalize(Volatility1)
     
     DATE <- BETA$DATE
     Volatility2 <- subset(BETA, select = -DATE) * 0.24 +
@@ -228,9 +241,12 @@ Factor.Volatility <-
     Volatility2 <- cbind.data.frame(DATE, Volatility2)
     Index <- match(Period, DATE)
     Volatility2 <- Volatility2[Index,]
+    #Normalized
+    Volatility2 <- Utils.Normalize(Volatility2)
     
     DATE <- Period
     Volatility <- cbind.data.frame(DATE, subset(Volatility1, select = -DATE) + subset(Volatility2, select = -DATE))
+    Volatility <- Utils.Normalize(Volatility)
     
     return(Volatility)
   }
@@ -286,6 +302,8 @@ Factor.Growth <-
     
     DATE <- Period
     Growth <- cbind.data.frame(DATE, subset(Growth1, select = -DATE) + subset(Growth2, select = -DATE))
+    Growth <- Utils.Normalize(Growth)
+    
     return(Growth)
   }
 
@@ -314,6 +332,8 @@ Factor.Leverage <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Leverage <- Leverage[Index,]
+    Leverage <- Utils.Normalize(Leverage)
+    
     return(Leverage)
   }
 
@@ -335,6 +355,8 @@ Factor.Liquidity <-
     Period <- Factor.Period(Ref.Date)
     Index <- match(Period, DATE)
     Trade <- Liquidity[Index,]
+    Trade <- Utils.Normalize(Trade)
+    
     return(Trade)
   }
 
