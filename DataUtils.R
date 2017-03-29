@@ -45,3 +45,14 @@ Utils.Normalize <-
     ret <- cbind.data.frame(DATE, ret)
     return(ret)
   }
+
+#Prepare input data for regression
+Utils.InputData <-
+  function(Ref.Date)
+  {
+    Input.Data <- list()
+    DATE <- Factor.Period(Ref.Date)
+    Names <- Factor.Names()
+    Industry <- matrix(0,nrow = length(Universe$Ticker), ncol = length(Names$Industry))
+    
+  }

@@ -382,3 +382,22 @@ Factor.Period <-
     }
     return(DATE)
   }
+
+#Utils: Names
+Factor.Names <-
+  function()
+  {
+    Names <- list()
+    #Style Factor
+    Names[["Style"]] <-
+      c("Momentum","Value","DivYld","Size","Trade","EarnVariab","Profit","Volatility","Growth","Leverage","Liquidity")
+    #Industry Factor
+    Names[["Industry"]] <- 
+      c("Banks","Capital Goods","Materials","Diversified Financials","Food Beverage & Tobacco","Real Estate",
+      "Pharmaceuticals, Biotechnology & Life Sciences","Technology Hardware & Equipment","Utilities","Transportation",
+      "Automobiles & Components","Insurance","Consumer Durables & Apparel","Energy","Media","Software & Services",
+      "Retailing","Health Care Equipment & Services","Telecommunication Services","Consumer Services",
+      "Semiconductors & Semiconductor Equipment","Commercial & Professional Services","Food & Staples Retailing",
+      "Household & Personal Products")
+    return(Names)
+  }
