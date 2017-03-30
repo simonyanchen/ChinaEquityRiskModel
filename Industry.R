@@ -1,7 +1,12 @@
 #Industry Function
 #Currently base on 24 industry groups of GICS classification
-Industry <-
-  function(Universe)
+Factor.Industry <-
+  function(Universe, Standard = "GICS")
   {
-    data <- bdp(Universe$Ticker, "GICS_INDUSTRY_GROUP")
+    Ticker <- Universe$Ticker
+    if(Standard == "GICS"){
+      Industry <- bdp(Ticker, "GICS_INDUSTRY_GROUP_NAME")$GICS_INDUSTRY_GROUP
+    }
+    ret <- cbind.data.frame(Ticker,Industry)
+    return(ret)
   }

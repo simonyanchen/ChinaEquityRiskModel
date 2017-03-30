@@ -500,11 +500,9 @@ BBGData.Read.BEST_SALES <-
                          names = c("periodicityAdjustment","periodicitySelection","nonTradingDayFillOption","nonTradingDayFillMethod"))
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
-    TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
-    BEST_SALES <- as.data.frame(TEMP)
-    names(BEST_SALES) <- Universe$Ticker
-    BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
+    TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_SALES <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_SALES)))
     
     return(BEST_SALES)
   }
@@ -520,10 +518,8 @@ BBGData.Read.BEST_SALES1 <-
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
-    BEST_SALES <- as.data.frame(TEMP)
-    names(BEST_SALES) <- Universe$Ticker
-    BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_SALES <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_SALES)))
     
     return(BEST_SALES)
   }
@@ -539,10 +535,8 @@ BBGData.Read.BEST_SALES2 <-
     #Calendar Dates
     DATE <- BBGData.CDR_WEEK(Ref.Year)
     TEMP <- bdh(Universe$Ticker, "BEST_SALES", start.date = S.Date, end.date = E.Date, options = Options, overrides = Overrides)
-    TEMP <- lapply(TEMP, (function(x) x[x$date %in% DATE,]))[Universe$Ticker]
-    BEST_SALES <- as.data.frame(TEMP)
-    names(BEST_SALES) <- Universe$Ticker
-    BEST_SALES <- cbind.data.frame(DATE, BEST_SALES)
+    TEMP <- TEMP[Universe$Ticker]
+    BEST_SALES <- cbind.data.frame(DATE, lapply(TEMP, (function(x) x$BEST_SALES)))
     
     return(BEST_SALES)
   }

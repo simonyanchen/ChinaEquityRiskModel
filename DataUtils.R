@@ -53,6 +53,51 @@ Utils.InputData <-
     Input.Data <- list()
     DATE <- Factor.Period(Ref.Date)
     Names <- Factor.Names()
-    Industry <- matrix(0,nrow = length(Universe$Ticker), ncol = length(Names$Industry))
+    IndustryInfo <- Factor.Industry(Universe,"GICS")
+    #Industry Factor
+    IndustryFactor <- matrix(0,
+                             nrow = length(Universe$Ticker),
+                             ncol = length(Names$Industry),
+                             dimnames = list(Universe$Ticker,Names$Industry))
+    Index <- match(IndustryInfo$Industry,Names$Industry)
+    for(i in (1:length(Universe$Ticker))){
+      IndustryFactor[i,Index[i]] <- 1
+    }
+    IndustryFactor <- as.data.frame(IndustryFactor)
+    #Style Factor
+    Momentum <- Factor.Momentum(Ref.Date)
+    Value <- Factor.Value(Ref.Date)
+    DivYld <- Factor.DivYld(Ref.Date)
+    Size <- Factor.Size(Ref.Date)
+    Trade <- Factor.Trade(Ref.Date)
+    EarnVariab <- Factor.EarnVariab(Ref.Date)
+    Profit <- Factor.Profit(Ref.Date)
+    Volatility <- Factor.Volatility(Ref.Date)
+    Growth <- Factor.Growth(Ref.Date)
+    Leverage <- Factor.Leverage(Ref.Date)
+    Liquidity <- Factor.Liquidity(Ref.Date)
+    #Cosmetics
+    for(j in (1:length(DATE))){
+      StyleFactor <- matrix(0,
+                       nrow = length(Universe$Ticker),
+                       ncol = length(Names$Style),
+                       dimnames = list(Universe$Ticker,Names$Style))
+      StyleFactor[,match("Momentum",Names$Style)] <- unlist(subset(Momentum, select = - DATE)[j,])
+      StyleFactor[,match("Value",Names$Style)] <- unlist(subset(Value, select = - DATE)[j,])
+      StyleFactor[,match("DivYld",Names$Style)] <- unlist(subset(DivYld, select = - DATE)[j,])
+      StyleFactor[,match("Size",Names$Style)] <- unlist(subset(Size, select = - DATE)[j,])
+      StyleFactor[,match("Trade",Names$Style)] <- unlist(subset(Trade, select = - DATE)[j,])
+      StyleFactor[,match("EarnVariab",Names$Style)] <- unlist(subset(EarnVariab, select = - DATE)[j,])
+      StyleFactor[,match("Profit",Names$Style)] <- unlist(subset(Profit, select = - DATE)[j,])
+      StyleFactor[,match("Volatility",Names$Style)] <- unlist(subset(Volatility, select = - DATE)[j,])
+      StyleFactor[,match("Growth",Names$Style)] <- unlist(subset(Growth, select = - DATE)[j,])
+      StyleFactor[,match("Leverage",Names$Style)] <- unlist(subset(Leverage, select = - DATE)[j,])
+      StyleFactor[,match("Liquidity",Names$Style)] <- unlist(subset(Liquidity, select = - DATE)[j,])
+      
+      StyleFactor <- as.data.frame(StyleFactor)
+      
+      Input.Data[[format(DATE[j])]] <- cbind.data.frame(StyleFactor,IndustryFactor)
+    }
     
+    return(Input.Data)
   }

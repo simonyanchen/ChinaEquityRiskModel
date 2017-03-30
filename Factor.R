@@ -393,11 +393,19 @@ Factor.Names <-
       c("Momentum","Value","DivYld","Size","Trade","EarnVariab","Profit","Volatility","Growth","Leverage","Liquidity")
     #Industry Factor
     Names[["Industry"]] <- 
-      c("Banks","Capital Goods","Materials","Diversified Financials","Food Beverage & Tobacco","Real Estate",
-      "Pharmaceuticals, Biotechnology & Life Sciences","Technology Hardware & Equipment","Utilities","Transportation",
-      "Automobiles & Components","Insurance","Consumer Durables & Apparel","Energy","Media","Software & Services",
-      "Retailing","Health Care Equipment & Services","Telecommunication Services","Consumer Services",
-      "Semiconductors & Semiconductor Equipment","Commercial & Professional Services","Food & Staples Retailing",
-      "Household & Personal Products")
+      c(
+        "Banks",                          "Real Estate",
+        "Transportation",                 "Capital Goods",
+        "Utilities",                      "Health Care Equipment & Servic",
+        "Software & Services",            "Technology Hardware & Equipmen",
+        "Materials",                      "Food & Staples Retailing",
+        "Consumer Services",              "Consumer Durables & Apparel",
+        "Diversified Financials",         "Pharmaceuticals, Biotechnology",
+        "Automobiles & Components",       "Food Beverage & Tobacco",
+        "Media",                          "Commercial & Professional Serv",
+        "Energy",                         "Retailing",
+        "Semiconductors & Semiconductor", "Telecommunication Services",
+        "Insurance",                      "Household & Personal Products"
+      )
     return(Names)
   }
