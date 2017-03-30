@@ -76,6 +76,8 @@ Utils.InputData <-
     Growth <- Factor.Growth(Ref.Date)
     Leverage <- Factor.Leverage(Ref.Date)
     Liquidity <- Factor.Liquidity(Ref.Date)
+    #Response Variable
+    Ret <- Factor.Return(Ref.Date)
     #Cosmetics
     for(j in (1:length(DATE))){
       StyleFactor <- matrix(0,
@@ -95,8 +97,8 @@ Utils.InputData <-
       StyleFactor[,match("Liquidity",Names$Style)] <- unlist(subset(Liquidity, select = - DATE)[j,])
       
       StyleFactor <- as.data.frame(StyleFactor)
-      
-      Input.Data[[format(DATE[j])]] <- cbind.data.frame(StyleFactor,IndustryFactor)
+      Return <- unlist(subset(Ret, select = - DATE)[j,])
+      Input.Data[[format(DATE[j])]] <- cbind.data.frame(Return,StyleFactor,IndustryFactor)
     }
     
     return(Input.Data)

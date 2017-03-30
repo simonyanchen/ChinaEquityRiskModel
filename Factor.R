@@ -152,7 +152,7 @@ Factor.EarnVariab <-
     INCOME <- Utils.CleanData("INCOME", Ref.Date, FALSE, 5)
     CASH_FLOW <- Utils.CleanData("CASH_FLOW", Ref.Date, FALSE, 5)
     SALES <- Utils.CleanData("SALES", Ref.Date, FALSE, 5)
-    TOT_ASSET <- Utils.CleanData("TOT_ASSET", Ref.Date, FALSE, 5)
+    TOT_ASSET <- Utils.CleanData("TOT_ASSET", Ref.Date, TRUE, 5)
     
     DATE <- INCOME$DATE
     
@@ -358,6 +358,24 @@ Factor.Liquidity <-
     Trade <- Utils.Normalize(Trade)
     
     return(Trade)
+  }
+
+#Response Variable: Return
+Factor.Return <-
+  function(Ref.Date = NULL)
+  {
+    if(is.null(Ref.Date))
+      Ref.Date <- Sys.Date()
+    #Find Last Friday
+    Ref.Date <- Ref.Date - (as.POSIXlt(Ref.Date)$wday + 2) %% 7
+    #Bloomberg Data
+    CHG_PCT <- Utils.CleanData("CHG_PCT", Ref.Date, FALSE, 0)
+    
+    Period <- Factor.Period(Ref.Date)
+    Index <- match(Period, CHG_PCT$DATE)
+    Return <- CHG_PCT[Index,]
+    
+    return(Return)
   }
 
 #Utils: Regression Period
